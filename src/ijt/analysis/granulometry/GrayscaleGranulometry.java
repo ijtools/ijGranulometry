@@ -3,14 +3,14 @@
  */
 package ijt.analysis.granulometry;
 
-import java.io.File;
-
 import ij.IJ;
 import ij.ImagePlus;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 import ijt.filter.morphology.Morphology;
 import ijt.filter.morphology.Strel;
+
+import java.io.File;
 
 /**
  * @author David Legland
@@ -275,5 +275,80 @@ public class GrayscaleGranulometry {
 		
 		return res;
 	}
+	
+	/**
+	 * Computes basic statistics for each granulometric curve given as row in
+	 * the input data table, using column label to assess x values.  
+	 * @param table input granulometry table
+	 * @return a data table with the same number of rows, and one column by summary statistics
+	 */
+	public final static ResultsTable granuloStats(ResultsTable granuloTable) {
+		
+		// Size of the table
+		int nCols = granuloTable.getLastColumn() + 1;
+		int nRows = granuloTable.getCounter();
+
+		// Get var names and deduces strel sizes
+		double[] x = new double[nCols];
+		for (int i = 0; i < nCols; i++) {
+			x[i] = Double.valueOf(granuloTable.getColumnHeading(i));
+		}
+
+		// Compute mean of each row
+		double[] means = new double[nRows];
+		for (int r = 0; r < nRows; r++) {
+			// Extract current row
+			double accum = 0;
+			for (int c = 0; c < nCols; c++) {
+				accum += granuloTable.getValueAsDouble(c, r) * x[c] / 100;
+			}
+			
+			means[r] = accum;
+		}
+		
+		// Compute standard deviations
+		double[] stds = new double[nRows];
+		for (int r = 0; r < nRows; r++) {
+			// Extract current row
+			double accum = 0;
+			for (int c = 0; c < nCols; c++) {
+				double dev = (x[c] - means[r]);
+				double sqd = dev * dev;
+				accum += sqd * granuloTable.getValueAsDouble(c, r) / 100;
+			}
+			
+			stds[r] = Math.sqrt(accum);
+		}
+		
+		// Compute geometric mean
+		double[] geommeans = new double[nRows];
+		for (int r = 0; r < nRows; r++) {
+			// Extract current row
+			double accum = 0;
+			for (int c = 0; c < nCols; c++) {
+				double freq = granuloTable.getValueAsDouble(c, r) / 100;
+				accum += Math.log(x[c]) * freq;
+			}
+			
+			geommeans[r] = Math.exp(accum);
+		}
+
+		// Create the resulting data table
+
+		ResultsTable results = new ResultsTable();
+		
+		for (int r = 0; r < nRows; r++) {
+			results.incrementCounter();
+
+			results.addLabel(granuloTable.getLabel(r));
+
+			results.addValue("mean", means[r]);
+			results.addValue("std", stds[r]);
+			results.addValue("geommean", geommeans[r]);
+		}
+
+		return results;
+	}
+		
 
 }

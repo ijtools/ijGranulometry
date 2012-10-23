@@ -36,4 +36,4 @@ if exist Grayscale_Granulometry.jar del /f /q Grayscale_Granulometry.jar
 jar cf Grayscale_Granulometry.jar -C jar\ .
 
 @REM remove temporary files created during process
-::if exist jar rmdir /S /Q jar
+if exist jar rmdir /S /Q jar

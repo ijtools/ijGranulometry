@@ -141,19 +141,25 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		ResultsTable granuloTable = (ResultsTable) results[3];
 		granuloTable.show("Granulometries");
 		
+		ResultsTable statsTable = (ResultsTable) results[5];
+		statsTable.show("Granulometry Stats");
+
+		
 		plotVolumetryCurves(volumeTable, "Volume variations", unitName);
 		plotGranulometryCurves(granuloTable, "Granulometry", unitName);
 		
-//		File outputDir = new File(ouputDirectory).getParentFile();
-//		String outputName = outputDir.getAbsolutePath();
 		String outputFilePath = new File(outputDirName, fileName).getAbsolutePath();
 		saveSummaryFile(outputFilePath, fileList, op, shape, diamMax, step, enhancement, resol, unitName);
 
-		fileName = outputFilePath.substring(0, outputFilePath.length()-4).concat(".vols.txt");
+		String basePath = outputFilePath.substring(0, outputFilePath.length()-4);
+		fileName = basePath.concat(".vols.txt");
 		saveResultsTable(fileName, volumeTable);
 		
-		fileName = outputFilePath.substring(0, outputFilePath.length()-4).concat(".gr.txt");
+		fileName = basePath.concat(".gr.txt");
 		saveResultsTable(fileName, granuloTable);
+		
+		fileName = basePath.concat(".stats.txt");
+		saveResultsTable(fileName, statsTable);
 	}
 
 	private final static String createDefaultFileName(String baseDir, Operation op, 
@@ -229,6 +235,8 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 
 			// Read and extract current image processor 
 			ImagePlus imp = IJ.openImage(fileList[iImg].getAbsolutePath());
+			if (imp == null)
+				break;
 
 			ImageProcessor image = imp.getProcessor();
 			
@@ -295,15 +303,20 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 			for (int i = 0; i < nSteps; i++) {
 				granuloTable.addValue(varNames[i+1], granulo[i]);
 			}
-			
 		}
+
+		// Compute basic stats
+		ResultsTable statsTable = GrayscaleGranulometry.granuloStats(granuloTable);
 		
 		// Close preview image
 		demoImage.changes = false;
 		demoImage.close();
 
 		// return the created array
-		return new Object[]{"Volumes", volumeTable, "Granulo", granuloTable};
+		return new Object[]{
+				"Volumes", volumeTable, 
+				"Granulo", granuloTable, 
+				"Stats", statsTable};
 	}
 	
 	private void plotVolumetryCurves(ResultsTable volumeTable, String title, String unitName) {

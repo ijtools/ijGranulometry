@@ -1,17 +1,17 @@
 #ImageJ 1.45k Preferences
-#Sat Oct 20 15:33:12 CEST 2012
+#Tue Oct 23 15:19:37 CEST 2012
 menu.size=14
 fps=7.0
 new.type=0
-dir.image=D\:\\images\\2010_STLO\\allRatios\\
+dir.image=D\:\\dlegland\\dev\\imagej\\ijGranulo\\dev\\files\\vtt2010\\
 new.width=400
 fcolor=\#000000
 div-by-zero=Infinity
 pp.options=1
 raw.type=0
-ij.y=117
+ij.y=33
 roicolor=\#FFFF00
-ij.x=511
+ij.x=269
 noise.sd=25.0
 prefs.options=541081600
 new.slices=1
