@@ -82,8 +82,11 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 
 		// (1) Choose an image into the input directory
 		ImagePlus image0 = IJ.openImage();
+		if (image0 == null) 
+			return;
+		
+		// Compute the liust of images in input directory
 		FileInfo infos = image0.getOriginalFileInfo();
-				
 		File baseDir = new File(infos.directory);
 		File[] fileList = baseDir.listFiles();
 		

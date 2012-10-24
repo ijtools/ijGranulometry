@@ -6,8 +6,10 @@ import ij.gui.Plot;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
 import ijt.filter.morphology.Morphology;
 import ijt.filter.morphology.Strel;
+import ijt.analysis.granulometry.GrayscaleGranulometry;
 import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
 
 
@@ -64,60 +66,14 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		// show result
 		ResultsTable table = (ResultsTable ) res[1]; 
 
-		ResultsTable granulo = derivate(table);
+		ResultsTable granulo = GrayscaleGranulometry.derivate(table);
 		granulo.show("Granulometry of "  + image.getShortTitle());
 		
-//		double[] vi = granulo.getColumnAsDoubles(0);
 		double[] xi = granulo.getColumnAsDoubles(0);
 		double[] yi = granulo.getColumnAsDoubles(1);
 		
 		plotGranulo(xi, yi, "Granulometry of " + image.getShortTitle());
 	}
-
-//	private void plotTableColumn(ResultsTable table, int index, String title) {
-//		
-//		int nr = table.getCounter();
-//		double[] x = table.getColumnAsDoubles(0);
-//		double[] y = table.getColumnAsDoubles(1);
-//		double xMax = x[x.length-1];
-//		double yMax = 0;
-//		for (int i = 0; i < nr; i++) {
-//			yMax = Math.max(yMax, y[i]);
-//		}
-//		
-//		// create plot with default line
-//		Plot plot = new Plot(title, "Strel Diameter", "Image Volume", x, y);
-//		
-//		// set up plot
-//		plot.setLimits(0, xMax, 0, yMax);
-//		
-//		// Display in new window
-//		plot.show();			
-//
-//	}
-	
-//	private void plotGranulo(double[] values) {
-//		
-//		int nr = values.length;
-//		double[] x = new double[nr];
-//		double yMax = 0;
-//		for (int i = 0; i < nr; i++) {
-//			x[i] = i;
-//			yMax = Math.max(yMax, values[i]);
-//		}
-//		
-//		// create plot with default line
-//		Plot plot = new Plot("Granulometric Curve", "Strel Diameter", "Grayscale Variation (%)", 
-//				x, values);
-//		
-//		// set up plot
-//		plot.setLimits(0, nr, 0, yMax);
-//		
-//		// Display in new window
-//		plot.show();			
-//
-//	}
-	
 	
 	private void plotGranulo(double[] x, double[] y, String title) {
 		
@@ -129,7 +85,7 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		}
 		
 		// create plot with default line
-		Plot plot = new Plot(title, "Strel Radius",
+		Plot plot = new Plot(title, "Strel Radius (pixels)",
 				"Grayscale Variation (%)", x, y);
 
 		// set up plot
@@ -142,12 +98,17 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 	public Object[] exec(ImagePlus imp, Morphology.Operation op, 
 			Strel.Shape shape, int diamMax, int step) {
 		
+		// Extract image processor, make sure it is Gray8
 		ImageProcessor image = imp.getProcessor();
+		if (image instanceof ShortProcessor) {
+			image = image.convertToByte(true);
+		}
+
 		int nSteps = diamMax / step;
 		
 		double[] volumes = new double[nSteps + 1];
 		
-		double vol = imageVolume(image);
+		double vol = GrayscaleGranulometry.imageVolume(image);
 		volumes[0] = vol;
 		
 		ResultsTable table = new ResultsTable();
@@ -168,7 +129,7 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 			imp.setProcessor(image2);
 			imp.updateImage();
 				
-			vol = imageVolume(image2);
+			vol = GrayscaleGranulometry.imageVolume(image2);
 			volumes[i+1] = vol;
 			
 			table.incrementCounter();
@@ -186,9 +147,14 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 	public ResultsTable granulometricCurve(ImageProcessor image, Morphology.Operation op, 
 			Strel.Shape shape, int radiusMax, int step) {
 		
+		// Ensure input image is Gray 8
+		if (image instanceof ShortProcessor) {
+			image = image.convertToByte(true);
+		}
+
 		int nSteps = radiusMax / step;
 		
-		double vol = imageVolume(image);
+		double vol = GrayscaleGranulometry.imageVolume(image);
 
 		ResultsTable table = new ResultsTable();
 		
@@ -207,7 +173,7 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 			
 			ImageProcessor image2 = op.apply(image, strel);
 			
-			vol = imageVolume(image2);
+			vol = GrayscaleGranulometry.imageVolume(image2);
 			
 			table.incrementCounter();
 			table.addValue("Radius", radius);
@@ -217,72 +183,4 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		return table;
 	}
 
-	private double imageVolume(ImageProcessor image) {
-		double res = 0;;
-		double resy = 0;
-		int width = image.getWidth();
-		int height = image.getHeight();
-		
-		for (int y = 0; y < height; y++) {
-			resy = 0;
-			for (int x = 0; x < width; x++) {
-				resy += image.getf(x, y);
-			}
-			res += resy;
-		}
-		return res;
-	}
-
-	/**
-	 * Computes derivative of the second column of the table
-	 */
-	private ResultsTable derivate(ResultsTable table) {
-		int n = table.getCounter();
-		
-		double[] xres = new double[n-1];
-		double[] yres = new double[n-1];
-		
-		// extract initial and final values
-		double v0 = table.getValueAsDouble(1, 0);
-		double vf = table.getValueAsDouble(1, n-1);
-
-		ResultsTable result = new ResultsTable();
-		
-		// compute normalized derivative
-		double v1 = v0;
-		for (int i = 1; i < n-1; i++) {
-			xres[i] = table.getValueAsDouble(0, i);
-			double v2 = table.getValueAsDouble(1, i);
-			yres[i] = 100 * (v2 - v1) / (vf - v0);
-			v1 = v2;
-			
-			result.incrementCounter();
-			result.addValue("Diameter", table.getValueAsDouble(0, i));
-			result.addValue("Variation", yres[i]);
-		}
-		
-		return result;
-	}
-
-//	private double[] derivate(double[] input) {
-//		int n = input.length;
-//		double[] result = new double[n];
-//		
-//		// extract initial and final values
-//		double v0 = input[0];
-//		double vf = input[n-1];
-//		
-//		// first result is set to 0 by definition
-//		result[0] = 0;
-//		
-//		// compute normalized derivative
-//		double v1 = v0;
-//		for (int i = 1; i < n; i++) {
-//			double v2 = input[i];
-//			result[i] = 100 * (v2 - v1) / (vf - v0);
-//			v1 = v2;
-//		}
-//		
-//		return result;
-//	}
 }
