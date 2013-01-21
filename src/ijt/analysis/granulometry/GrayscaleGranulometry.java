@@ -22,15 +22,19 @@ public class GrayscaleGranulometry {
 	// Enumeration for operations
 
 	/**
-	 * A pre-defined set of operations.
-	 * Mainly a wrapper to a subset of operations defined in 
-	 * Morphology.Operation.
+	 * A pre-defined set of operations. 
+	 * This enumeration is ainly a wrapper to a subset of operations defined
+	 * in Morphology.Operation.
 	 * @see ijt.filter.morphology.Morphology.Operation
 	 */
 	public enum Operation {
+		/** Morphological Erosion*/
 		EROSION(Morphology.Operation.EROSION),
+		/** Morphological Dilation*/
 		DILATION(Morphology.Operation.DILATION),
+		/** Morphological Closing*/
 		CLOSING(Morphology.Operation.CLOSING),
+		/** Morphological Opening*/
 		OPENING(Morphology.Operation.OPENING);
 		
 		private Morphology.Operation op;
@@ -71,6 +75,51 @@ public class GrayscaleGranulometry {
 					return op;
 			}
 			throw new IllegalArgumentException("Unable to parse Operation with label: " + opLabel);
+		}
+	};
+
+	/**
+	 * A set of operation for normalizing images before computing granulometries. 
+	 */
+	public enum Enhancement {
+		NONE("None"),
+		NORMALIZE("Normalize"),
+		EQUALIZE("Equalize");
+		
+		private String label;
+		
+		private Enhancement(String label) {
+			this.label = label;
+		}
+		
+		public String toString() {
+			return this.label;
+		}
+		
+		public static String[] getAllLabels(){
+			int n = Enhancement.values().length;
+			String[] result = new String[n];
+			
+			int i = 0;
+			for (Enhancement v : Enhancement.values())
+				result[i++] = v.toString();
+			
+			return result;
+		}
+		
+		/**
+		 * Determines the operation type from its label.
+		 * @throws IllegalArgumentException if label is not recognized.
+		 */
+		public static Enhancement fromLabel(String label) {
+			if (label != null)
+				label = label.toLowerCase();
+			for (Enhancement val : Enhancement.values()) {
+				String cmp = val.toString().toLowerCase();
+				if (cmp.equals(label))
+					return val;
+			}
+			throw new IllegalArgumentException("Unable to parse Enhancement with label: " + label);
 		}
 	};
 

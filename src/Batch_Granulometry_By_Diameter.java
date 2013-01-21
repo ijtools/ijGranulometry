@@ -85,7 +85,7 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		if (image0 == null) 
 			return;
 		
-		// Compute the liust of images in input directory
+		// Compute the list of images in input directory
 		FileInfo infos = image0.getOriginalFileInfo();
 		File baseDir = new File(infos.directory);
 		File[] fileList = baseDir.listFiles();
@@ -103,10 +103,10 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 				Enhancement.NONE.toString());
 		gd.addNumericField("Spatial_Calibration", 1, 2);
 		gd.addStringField("Calibration_Unit", "pixel");
-		
 		// Could also add an option for the type of operation
-		gd.showDialog();
 		
+		// Wait for user response
+		gd.showDialog();
 		if (gd.wasCanceled())
 			return;
 		
