@@ -176,6 +176,9 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		case EQUALIZE:
 			baseName = baseName + "eq_";
 			break;
+		case NONE:
+			// nothing to do
+			break;
 		}
 		
 		String opName = op.toString().substring(0, 2);
@@ -255,6 +258,9 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 				break;
 			case EQUALIZE:
 				enhancer.equalize(image);
+				break;
+			case NONE:
+				// nothing to do
 				break;
 			}
 			
