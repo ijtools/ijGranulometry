@@ -154,7 +154,9 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		String outputFilePath = new File(outputDirName, fileName).getAbsolutePath();
 		saveSummaryFile(outputFilePath, fileList, op, shape, diamMax, step, enhancement, resol, unitName);
 
-		String basePath = outputFilePath.substring(0, outputFilePath.length()-4);
+		String basePath = outputFilePath;
+		if (basePath.endsWith(".txt"))
+			basePath = basePath.substring(0, basePath.length() - 4);
 		fileName = basePath.concat(".vols.txt");
 		saveResultsTable(fileName, volumeTable);
 		
@@ -185,6 +187,7 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 
 		String shapeName = "Unk";
 		switch(shape) {
+		case DISK: 			shapeName = "Dsk"; break;
 		case SQUARE: 		shapeName = "Sq"; break;
 		case OCTAGON: 		shapeName = "Oct"; break;
 		case DIAMOND: 		shapeName = "Dmd"; break;

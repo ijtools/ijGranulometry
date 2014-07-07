@@ -1,3 +1,5 @@
+import java.util.Locale;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
@@ -53,12 +55,12 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		// extract chosen parameters
 		Operation op = Operation.fromLabel(gd.getNextChoice());
 		Strel.Shape shape = Strel.Shape.fromLabel(gd.getNextChoice());
-		int diamMax = (int) gd.getNextNumber();		
+		int radiusMax = (int) gd.getNextNumber();		
 		int step 	= (int) gd.getNextNumber();		
 	
 		
 		// Execute core of the plugin
-		Object[] res = exec(image, op.getOperation(), shape, diamMax, step);
+		Object[] res = exec(image, op.getOperation(), shape, radiusMax, step);
 
 		if (res == null)
 			return;
@@ -67,12 +69,17 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		ResultsTable table = (ResultsTable ) res[1]; 
 
 		ResultsTable granulo = GrayscaleGranulometry.derivate(table);
-		granulo.show("Granulometry of "  + image.getShortTitle());
+		
+		String title = String.format(Locale.ENGLISH,
+				"Granulometry of %s (operation=%s, shape=%s, radius=%d, step=%d)",
+				image.getShortTitle(), op, shape, radiusMax, step);
+
+		granulo.show(title);
 		
 		double[] xi = granulo.getColumnAsDoubles(0);
 		double[] yi = granulo.getColumnAsDoubles(1);
 		
-		plotGranulo(xi, yi, "Granulometry of " + image.getShortTitle());
+		plotGranulo(xi, yi, title);
 	}
 	
 	private void plotGranulo(double[] x, double[] y, String title) {

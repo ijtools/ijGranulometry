@@ -22,9 +22,12 @@ public class GrayscaleGranulometry {
 	// Enumeration for operations
 
 	/**
-	 * A pre-defined set of operations. 
-	 * This enumeration is ainly a wrapper to a subset of operations defined
-	 * in Morphology.Operation.
+	 * A pre-defined set of operations that can be used for computation of gray
+	 * level granulometry curves.
+	 * 
+	 * This enumeration is mainly a wrapper to a subset of operations defined in
+	 * Morphology.Operation.
+	 * 
 	 * @see ijt.filter.morphology.Morphology.Operation
 	 */
 	public enum Operation {
