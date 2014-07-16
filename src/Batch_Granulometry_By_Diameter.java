@@ -211,19 +211,6 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		// Diameter = 1 corresponds to original image
 		int nSteps = (diamMax - 1) / step;
 		
-		// Initialize the array of column names
-		String[] varNames = new String[nSteps+1];
-		if (resol != 1 || unitName.compareTo("pixel") != 0) {
-			for (int i = 0; i < nSteps + 1; i++) {
-				double diam = (i * step + 1) * resol;
-				varNames[i] = String.format(Locale.US, "%5.2f", diam);
-			}
-		} else {
-			for (int i = 0; i < nSteps + 1; i++) {
-				varNames[i] = Integer.toString(i * step + 1);
-			}
-		}
-		
 		// Initialize array of image volumes
 		double[] volumes = new double[nSteps + 1];
 		
@@ -236,7 +223,8 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		ResultsTable volumeTable = new ResultsTable();
 		ResultsTable granuloTable = new ResultsTable();
 		
-
+		String[] varNames = createColumnNames(diamMax, step, resol, unitName);
+		
 		ContrastEnhancer enhancer = new ContrastEnhancer();
 		
 		// Iterate on image list
@@ -330,6 +318,33 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 				"Granulo", granuloTable, 
 				"Stats", statsTable};
 	}
+	
+	/**
+	 *  Initialize the array of column names.
+	 */
+	private String[] createColumnNames(int maxDiameter, int step, double resol,
+			String unitName) 
+	{
+		String[] varNames = new String[maxDiameter+1];
+		if (resol != 1 || unitName.compareTo("pixel") != 0)
+		{
+			for (int i = 0; i < maxDiameter + 1; i++) 
+			{
+				double diam = (i * step + 1) * resol;
+				varNames[i] = String.format(Locale.US, "%5.2f", diam);
+			}
+		} 
+		else
+		{
+			for (int i = 0; i < maxDiameter + 1; i++) 
+			{
+				varNames[i] = Integer.toString(i * step + 1);
+			}
+		}
+	
+		return varNames;
+	}
+	
 	
 	private void plotVolumetryCurves(ResultsTable volumeTable, String title, String unitName) {
 		

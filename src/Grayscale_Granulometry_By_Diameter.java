@@ -19,6 +19,12 @@ import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
  */
 
 /**
+ * Plugin for computing granulometric curve from a gray level image, by 
+ * specifying the diameter range of the structuring element.
+ * 
+ * Note that depending on structuring element, some diameters may not be
+ * available (eg, disk strels require odd diameter).
+ *   
  * @author David Legland
  *
  */
@@ -45,7 +51,9 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 				Strel.Shape.SQUARE.toString());
 		gd.addNumericField("Diameter Max. (in pixels)", 51, 0);
 		gd.addNumericField("Step (in pixels)", 1, 0);
-		
+		gd.addNumericField("Spatial_Calibration", 1, 2);
+		gd.addStringField("Calibration_Unit", "pixel");
+
 		// Could also add an option for the type of operation
 		gd.showDialog();
 		
@@ -57,9 +65,15 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		Strel.Shape shape = Strel.Shape.fromLabel(gd.getNextChoice());
 		int diamMax = (int) gd.getNextNumber();		
 		int step 	= (int) gd.getNextNumber();		
-	
+		double resol = gd.getNextNumber();
+		if (Double.isNaN(resol)) {
+			IJ.error("Parsing Error", "Could not interpret the resolution input");
+			return;
+		}
+		String unitName = gd.getNextString();
+
 		// Execute core of the plugin
-		Object[] res = exec(image, op.getOperation(), shape, diamMax, step);
+		Object[] res = exec(image, op.getOperation(), shape, diamMax, step, resol, unitName);
 		if (res == null)
 			return;
 
@@ -75,11 +89,11 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		
 		double[] xi = granulo.getColumnAsDoubles(0);
 		double[] yi = granulo.getColumnAsDoubles(1);
-		plotGranulo(xi, yi, title);
+		plotGranulo(xi, yi, title, unitName);
 	}
 
 	
-	private void plotGranulo(double[] x, double[] y, String title) {
+	private void plotGranulo(double[] x, double[] y, String title, String unitName) {
 		
 		int nr = x.length;
 		double xMax = x[nr-1];
@@ -89,7 +103,7 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		}
 		
 		// create plot with default line
-		Plot plot = new Plot(title, "Strel Diameter (pixels)",
+		Plot plot = new Plot(title, "Strel Diameter (" + unitName + ")",
 				"Grayscale Variation (%)", x, y);
 	
 		// set up plot
@@ -103,7 +117,8 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 	 * Compute granulometric curve on current image, and display progression in current frame. 
 	 */
 	public Object[] exec(ImagePlus imp, Morphology.Operation op, 
-			Strel.Shape shape, int diamMax, int step) {
+			Strel.Shape shape, int diamMax, int step, double resol,
+			String unitName) {
 		
 		// Extract image processor, make sure it is Gray8
 		ImageProcessor image = imp.getProcessor();
@@ -122,21 +137,27 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		
 		int diam = 1;
 		for (int i = 0; i < nSteps; i++) {
+			// strel current diameter
 			diam += step;
+			double diam2 = diam * resol;
 			
-			IJ.showStatus("Diameter " + diam + "(" + i + "/" + nSteps + ")");
+			showProgression(diam2, unitName, i, nSteps);
 			
+			// Create strel
 			Strel strel = shape.fromDiameter(diam);
 			strel.showProgress(false);
 			
+			// compute morphological operation
 			ImageProcessor image2 = op.apply(image, strel);
 			imp.setProcessor(image2);
 			imp.updateImage();
 				
+			// compute imae volume
 			vol = GrayscaleGranulometry.imageVolume(image2);
 			
+			// update table
 			table.incrementCounter();
-			table.addValue("Diameter", diam);
+			table.addValue("Diameter", diam2);
 			table.addValue("Volume", vol);
 		}
 		
@@ -148,11 +169,22 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 	}
 
 	/**
-	 * Compute granulometric curve on current image, without any display, and
+	 * Compute granulometric curve on input image, without any display, and
 	 * return directly the data table.
+	 * @deprecated should specify image resolution
 	 */
+	@Deprecated
 	public ResultsTable granulometricCurve(ImageProcessor image, Morphology.Operation op, 
 			Strel.Shape shape, int diamMax, int step) {
+		return granulometricCurve(image, op, shape, diamMax, step, 1, "");
+	}
+	
+	/**
+	 * Compute granulometric curve on input image, without any display, using spatial
+	 * calibration of image.
+	 */
+	public ResultsTable granulometricCurve(ImageProcessor image, Morphology.Operation op, 
+			Strel.Shape shape, int diamMax, int step, double resol, String unitName) {
 		
 		// Ensure input image is Gray 8
 		if (image instanceof ShortProcessor) {
@@ -172,8 +204,9 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		
 		for (int i = 0; i < nSteps; i++) {
 			diam += step;
+			double diam2 = diam * resol;
 			
-			IJ.showStatus("Diameter " + diam + "(" + i + "/" + nSteps + ")");
+			showProgression(diam2, unitName, i, nSteps);
 			
 			Strel strel = shape.fromDiameter(diam);
 			strel.showProgress(false);
@@ -183,11 +216,21 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 			vol = GrayscaleGranulometry.imageVolume(image2);
 			
 			table.incrementCounter();
-			table.addValue("Diameter", diam);
+			table.addValue("Diameter", diam2);
 			table.addValue("Volume", vol);
 		}
 		
 		return table;
 	}
 
+	private void showProgression(double currentDiameter, String unitName,
+			int i, int iMax) {
+		String diamString = String.format(Locale.ENGLISH, "%7.2f",
+				currentDiameter);
+		if (unitName != null && !unitName.isEmpty()) {
+			diamString = diamString.concat(" " + unitName);
+		}
+		IJ.showStatus("Diameter: " + diamString + " (" + i + "/" + iMax + ")");
+
+	}
 }

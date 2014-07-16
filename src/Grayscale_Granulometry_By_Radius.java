@@ -45,7 +45,9 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 				Strel.Shape.SQUARE.toString());
 		gd.addNumericField("Radius Max. (in pixels)", 25, 0);
 		gd.addNumericField("Step (in pixels)", 1, 0);
-		
+		gd.addNumericField("Spatial_Calibration", 1, 2);
+		gd.addStringField("Calibration_Unit", "pixel");
+
 		// Could also add an option for the type of operation
 		gd.showDialog();
 		
@@ -57,10 +59,17 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		Strel.Shape shape = Strel.Shape.fromLabel(gd.getNextChoice());
 		int radiusMax = (int) gd.getNextNumber();		
 		int step 	= (int) gd.getNextNumber();		
+		double resol = gd.getNextNumber();
+		if (Double.isNaN(resol)) {
+			IJ.error("Parsing Error", "Could not interpret the resolution input");
+			return;
+		}
+		String unitName = gd.getNextString();
 	
 		
 		// Execute core of the plugin
-		Object[] res = exec(image, op.getOperation(), shape, radiusMax, step);
+		Object[] res = exec(image, op.getOperation(), shape, radiusMax, step, 
+				resol, unitName);
 
 		if (res == null)
 			return;
@@ -79,10 +88,10 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		double[] xi = granulo.getColumnAsDoubles(0);
 		double[] yi = granulo.getColumnAsDoubles(1);
 		
-		plotGranulo(xi, yi, title);
+		plotGranulo(xi, yi, title, unitName);
 	}
 	
-	private void plotGranulo(double[] x, double[] y, String title) {
+	private void plotGranulo(double[] x, double[] y, String title, String unitName) {
 		
 		int nr = x.length;
 		double xMax = x[nr-1];
@@ -92,7 +101,7 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		}
 		
 		// create plot with default line
-		Plot plot = new Plot(title, "Strel Radius (pixels)",
+		Plot plot = new Plot(title, "Strel Radius (" + unitName + ")",
 				"Grayscale Variation (%)", x, y);
 
 		// set up plot
@@ -102,8 +111,17 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		plot.show();			
 	}
 
+	/**
+	 * @deprecated: should specify resolution and unit name
+	 */
+	@Deprecated
 	public Object[] exec(ImagePlus imp, Morphology.Operation op, 
 			Strel.Shape shape, int diamMax, int step) {
+		return exec(imp, op, shape, diamMax, step, 1, "");
+	}
+	
+	public Object[] exec(ImagePlus imp, Morphology.Operation op, 
+			Strel.Shape shape, int diamMax, int step, double resol, String unitName) {
 		
 		// Extract image processor, make sure it is Gray8
 		ImageProcessor image = imp.getProcessor();
@@ -127,7 +145,9 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		for (int i = 0; i < nSteps; i++) {
 			radius += step;
 			
-			IJ.showStatus("Radius " + radius + "(" + i + "/" + nSteps + ")");
+			double radius2 = radius * resol;
+			
+			showRadiusProgression(radius2, unitName, i, nSteps);
 			
 			Strel strel = shape.fromRadius(radius);
 			strel.showProgress(false);
@@ -140,7 +160,7 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 			volumes[i+1] = vol;
 			
 			table.incrementCounter();
-			table.addValue("Radius", radius);
+			table.addValue("Radius", radius2);
 			table.addValue("Volume", vol);
 		}
 		
@@ -153,6 +173,11 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 
 	public ResultsTable granulometricCurve(ImageProcessor image, Morphology.Operation op, 
 			Strel.Shape shape, int radiusMax, int step) {
+		return granulometricCurve(image, op, shape, radiusMax, step, 1, "");
+	}
+	
+	public ResultsTable granulometricCurve(ImageProcessor image, Morphology.Operation op, 
+			Strel.Shape shape, int radiusMax, int step, double resol, String unitName) {
 		
 		// Ensure input image is Gray 8
 		if (image instanceof ShortProcessor) {
@@ -172,8 +197,9 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 		
 		for (int i = 0; i < nSteps; i++) {
 			radius += step;
+			double radius2 = radius * resol;
 			
-			IJ.showStatus("Radius " + radius + "(" + i + "/" + nSteps + ")");
+			showRadiusProgression(radius2, unitName, i, nSteps);
 			
 			Strel strel = shape.fromRadius(radius);
 			strel.showProgress(false);
@@ -183,11 +209,21 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 			vol = GrayscaleGranulometry.imageVolume(image2);
 			
 			table.incrementCounter();
-			table.addValue("Radius", radius);
+			table.addValue("Radius", radius2);
 			table.addValue("Volume", vol);
 		}
 		
 		return table;
 	}
 
+	private void showRadiusProgression(double currentDiameter, String unitName,
+			int i, int iMax) {
+		String radiusString = String.format(Locale.ENGLISH, "%7.2f",
+				currentDiameter);
+		if (unitName != null && !unitName.isEmpty()) {
+			radiusString = radiusString.concat(" " + unitName);
+		}
+		IJ.showStatus("Radius: " + radiusString + " (" + i + "/" + iMax + ")");
+
+	}
 }
