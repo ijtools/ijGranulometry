@@ -1,3 +1,5 @@
+package ijt.analysis.granulometry;
+
 import java.util.Locale;
 
 import ij.IJ;
@@ -28,7 +30,7 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn {
 	/* (non-Javadoc)
 	 * @see ij.plugin.PlugIn#run(java.lang.String)
 	 */
-	@Override
+//	@Override
 	public void run(String arg) {
 		ImagePlus image = WindowManager.getCurrentImage();
 		if (image == null) {

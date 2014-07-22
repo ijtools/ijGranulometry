@@ -1,4 +1,4 @@
-import java.util.Locale;
+package ijt.analysis.granulometry;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -9,10 +9,12 @@ import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
-import ijt.filter.morphology.Morphology;
-import ijt.filter.morphology.Strel;
 import ijt.analysis.granulometry.GrayscaleGranulometry;
 import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
+import ijt.filter.morphology.Morphology;
+import ijt.filter.morphology.Strel;
+
+import java.util.Locale;
 
 /**
  * 
@@ -34,7 +36,7 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 	/* (non-Javadoc)
 	 * @see ij.plugin.PlugIn#run(java.lang.String)
 	 */
-	@Override
+//	@Override
 	public void run(String arg) {
 		ImagePlus image = WindowManager.getCurrentImage();
 		if (image == null) {

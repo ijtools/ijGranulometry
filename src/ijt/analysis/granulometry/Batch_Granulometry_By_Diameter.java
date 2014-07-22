@@ -1,3 +1,5 @@
+package ijt.analysis.granulometry;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
@@ -77,7 +79,7 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 	/* (non-Javadoc)
 	 * @see ij.plugin.PlugIn#run(java.lang.String)
 	 */
-	@Override
+//	@Override
 	public void run(String arg) {
 
 		// (1) Choose an image into the input directory

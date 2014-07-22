@@ -33,7 +33,7 @@ if exist Grayscale_Granulometry.jar del /f /q Grayscale_Granulometry.jar
 
 
 @REM build the new archive
-jar cf Grayscale_Granulometry.jar -C jar\ .
+c:\"Program Files (x86)"\Java\jdk1.6.0_24\bin\jar cf Grayscale_Granulometry.jar -C jar\ .
 
 @REM remove temporary files created during process
 if exist jar rmdir /S /Q jar
