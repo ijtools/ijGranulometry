@@ -5,6 +5,7 @@ import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.gui.Plot;
+import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
@@ -53,8 +54,10 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 				Strel.Shape.SQUARE.toString());
 		gd.addNumericField("Diameter Max. (in pixels)", 51, 0);
 		gd.addNumericField("Step (in pixels)", 1, 0);
-		gd.addNumericField("Spatial_Calibration", 1, 2);
-		gd.addStringField("Calibration_Unit", "pixel");
+		// add psb to specify spatial calibration
+		Calibration calib = image.getCalibration();
+		gd.addNumericField("Spatial_Calibration", calib.pixelWidth, 3);
+		gd.addStringField("Calibration_Unit", calib.getUnit());
 
 		// Could also add an option for the type of operation
 		gd.showDialog();
