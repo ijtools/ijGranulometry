@@ -71,7 +71,23 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		int diamMax = (int) gd.getNextNumber();		
 		int step 	= (int) gd.getNextNumber();		
 		double resol = gd.getNextNumber();
-		if (Double.isNaN(resol)) {
+
+		// Do some checkup on user inputs
+		if (shape == Strel.Shape.DIAMOND)
+		{
+			if (diamMax % 2 == 0) 
+			{
+				IJ.error("Diamond shapes require odd diameters");
+				return;
+			}
+			if (step % 2 == 1) 
+			{
+				IJ.error("Diamond shapes require even diameter steps");
+				return;
+			}
+		}
+		if (Double.isNaN(resol)) 
+		{
 			IJ.error("Parsing Error", "Could not interpret the resolution input");
 			return;
 		}
