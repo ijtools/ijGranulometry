@@ -12,8 +12,8 @@ import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
-import ijt.filter.morphology.Morphology;
-import ijt.filter.morphology.Strel;
+import inra.ijpb.morphology.Morphology;
+import inra.ijpb.morphology.Strel;
 import ijt.analysis.granulometry.GrayscaleGranulometry;
 import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
 

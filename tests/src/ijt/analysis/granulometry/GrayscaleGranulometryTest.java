@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import ij.measure.ResultsTable;
 import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
-import ijt.filter.morphology.Strel;
+import inra.ijpb.morphology.Strel;
 
 import java.io.File;
 

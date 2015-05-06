@@ -7,8 +7,9 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
-import ijt.filter.morphology.Morphology;
-import ijt.filter.morphology.Strel;
+
+import inra.ijpb.morphology.Morphology;
+import inra.ijpb.morphology.Strel;
 
 import java.io.File;
 

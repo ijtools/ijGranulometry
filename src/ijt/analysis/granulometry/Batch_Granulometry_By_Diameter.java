@@ -13,7 +13,7 @@ import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 import ijt.analysis.granulometry.GrayscaleGranulometry;
 import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
-import ijt.filter.morphology.Strel;
+import inra.ijpb.morphology.Strel;
 
 import java.io.BufferedWriter;
 import java.io.File;
