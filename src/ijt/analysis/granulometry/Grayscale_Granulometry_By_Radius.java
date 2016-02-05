@@ -55,6 +55,7 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 		Calibration calib = image.getCalibration();
 		gd.addNumericField("Spatial_Calibration", calib.pixelWidth, 3);
 		gd.addStringField("Calibration_Unit", calib.getUnit());
+		gd.addCheckbox("Display Volume Curve", false);
 
 		// Display dialog and wait for user input
 		gd.showDialog();
@@ -73,16 +74,32 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 			return;
 		}
 		String unitName = gd.getNextString();
+		boolean displayVolumeCurve = gd.getNextBoolean();
 	
 		
 		// Execute core of the plugin
-		ResultsTable table = computeVolumeCurve(image, op.getOperation(), shape, radiusMax, step, 
+		ResultsTable volumeTable = computeVolumeCurve(image, op.getOperation(), shape, radiusMax, step, 
 				resol, unitName);
-		if (table == null)
+		if (volumeTable == null)
 			return;
 
+		// Display volumic curve and table if necessary
+		if (displayVolumeCurve)
+		{
+			// Display table
+			String title = String.format(Locale.ENGLISH,
+					"Volume Curve of %s (operation=%s, shape=%s, radius=%d, step=%d)",
+					image.getShortTitle(), op, shape, radiusMax, step);
+			volumeTable.show(title);
+			
+			// Display curve
+			double[] xi = volumeTable.getColumnAsDoubles(0);
+			double[] yi = volumeTable.getColumnAsDoubles(1);
+			plotVolumeCurve(xi, yi, title, unitName);
+		}
+		
 		// Compute granulometry curve from volume curve
-		ResultsTable granulo = GrayscaleGranulometry.derivate(table);
+		ResultsTable granulo = GrayscaleGranulometry.derivate(volumeTable);
 		
 		// Display resulting granulometry curve
 		String title = String.format(Locale.ENGLISH,
@@ -117,6 +134,35 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 		// create plot with default line
 		Plot plot = new Plot(title, "Strel Radius (" + unitName + ")",
 				"Grayscale Variation (%)", x, y);
+
+		// set up plot
+		plot.setLimits(0, xMax, 0, yMax);
+		
+		// Display in new window
+		plot.show();			
+	}
+
+	/**
+	 * Displays the image volume curve and adds some decorations.
+	 *  
+	 * @param x the array of values for sizes
+	 * @param y the array of values for size distribution
+	 * @param title the title of the graph
+	 * @param unitName unit name (for legend)
+	 */
+	private void plotVolumeCurve(double[] x, double[] y, String title, String unitName) 
+	{
+		int nr = x.length;
+		double xMax = x[nr-1];
+		double yMax = 0;
+		for (int i = 0; i < nr; i++) 
+		{
+			yMax = Math.max(yMax, y[i]);
+		}
+		
+		// create plot with default line
+		Plot plot = new Plot(title, "Strel Radius (" + unitName + ")",
+				"Image Total Intensity", x, y);
 
 		// set up plot
 		plot.setLimits(0, xMax, 0, yMax);
