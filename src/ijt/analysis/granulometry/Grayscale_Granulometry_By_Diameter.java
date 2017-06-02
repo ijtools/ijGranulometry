@@ -31,22 +31,23 @@ import java.util.Locale;
  * @author David Legland
  *
  */
-public class Grayscale_Granulometry_By_Diameter implements PlugIn {
-
-	
+public class Grayscale_Granulometry_By_Diameter implements PlugIn
+{
 	/* (non-Javadoc)
 	 * @see ij.plugin.PlugIn#run(java.lang.String)
 	 */
-//	@Override
-	public void run(String arg) {
+	public void run(String arg) 
+	{
+		// Get current open image
 		ImagePlus image = WindowManager.getCurrentImage();
-		if (image == null) {
+		if (image == null) 
+		{
 			IJ.error("No image", "Need at least one image to work");
 			return;
 		}
 		
 		// create the dialog
-		GenericDialog gd = new GenericDialog("Morphological Filter");
+		GenericDialog gd = new GenericDialog("Grayscale Granulometry");
 		
 		gd.addChoice("Operation", Operation.getAllLabels(), 
 				Operation.CLOSING.toString());
@@ -58,12 +59,14 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		Calibration calib = image.getCalibration();
 		gd.addNumericField("Spatial_Calibration", calib.pixelWidth, 3);
 		gd.addStringField("Calibration_Unit", calib.getUnit());
+		gd.addCheckbox("Display Volume Curve", false);
 
-		// Could also add an option for the type of operation
+		// Display dialog and wait for user input
 		gd.showDialog();
-		
 		if (gd.wasCanceled())
+		{
 			return;
+		}
 		
 		// extract chosen parameters
 		Operation op = Operation.fromLabel(gd.getNextChoice());
@@ -71,6 +74,8 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		int diamMax = (int) gd.getNextNumber();		
 		int step 	= (int) gd.getNextNumber();		
 		double resol = gd.getNextNumber();
+		String unitName = gd.getNextString();
+		boolean displayVolumeCurve = gd.getNextBoolean();
 
 		// Do some checkup on user inputs
 		if (shape == Strel.Shape.DIAMOND)
@@ -91,35 +96,48 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 			IJ.error("Parsing Error", "Could not interpret the resolution input");
 			return;
 		}
-		String unitName = gd.getNextString();
-
-		// Execute core of the plugin
-		Object[] res = exec(image, op.getOperation(), shape, diamMax, step, resol, unitName);
-		if (res == null)
-			return;
-
-		ResultsTable table = (ResultsTable) res[1];
 		
-		ResultsTable granulo = GrayscaleGranulometry.derivate(table);
+		ResultsTable volumeTable = computeVolumeCurve(image.getProcessor(), op.getOperation(), shape, diamMax, step,
+				resol, unitName);
+		//		imp.setProcessor(image);
+		//		imp.updateImage();
+
+		// Display volume curve and table if necessary
+		if (displayVolumeCurve)
+		{
+			// Display table
+			String title = String.format(Locale.ENGLISH,
+					"Volume Curve of %s (operation=%s, shape=%s, diameter=%d, step=%d)",
+					image.getShortTitle(), op, shape, diamMax, step);
+			volumeTable.show(title);
+			
+			// Display curve
+			double[] xi = volumeTable.getColumnAsDoubles(0);
+			double[] yi = volumeTable.getColumnAsDoubles(1);
+			plotVolumeCurve(xi, yi, title, unitName);
+		}
+		
+		ResultsTable granulo = GrayscaleGranulometry.derivate(volumeTable);
 		
 		String title = String.format(Locale.ENGLISH,
 				"Granulometry of %s (operation=%s, shape=%s, diameter=%d, step=%d)",
 				image.getShortTitle(), op, shape, diamMax, step);
-
 		granulo.show(title);
 		
+		// plot the granulometric curve
 		double[] xi = granulo.getColumnAsDoubles(0);
 		double[] yi = granulo.getColumnAsDoubles(1);
 		plotGranulo(xi, yi, title, unitName);
 	}
 
 	
-	private void plotGranulo(double[] x, double[] y, String title, String unitName) {
-		
+	private void plotGranulo(double[] x, double[] y, String title, String unitName) 
+	{
 		int nr = x.length;
 		double xMax = x[nr-1];
 		double yMax = 0;
-		for (int i = 0; i < nr; i++) {
+		for (int i = 0; i < nr; i++) 
+		{
 			yMax = Math.max(yMax, y[i]);
 		}
 		
@@ -133,82 +151,46 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		// Display in new window
 		plot.show();			
 	}
-
+	
 	/**
-	 * Compute granulometric curve on current image, and display progression in current frame. 
+	 * Displays the image volume curve and adds some decorations.
+	 *  
+	 * @param x the array of values for sizes
+	 * @param y the array of values for size distribution
+	 * @param title the title of the graph
+	 * @param unitName unit name (for legend)
 	 */
-	public Object[] exec(ImagePlus imp, Morphology.Operation op, 
-			Strel.Shape shape, int diamMax, int step, double resol,
-			String unitName) {
-		
-		// Extract image processor, make sure it is Gray8
-		ImageProcessor image = imp.getProcessor();
-		if (image instanceof ShortProcessor) {
-			image = image.convertToByte(true);
-		}
-
-		int nSteps = diamMax / step;
-		
-		double vol = GrayscaleGranulometry.imageVolume(image);
-		
-		ResultsTable table = new ResultsTable();
-		table.incrementCounter();
-		table.addValue("Diameter", 0);
-		table.addValue("Volume", vol);
-		
-		int diam = 1;
-		for (int i = 0; i < nSteps; i++) {
-			// strel current diameter
-			diam += step;
-			double diam2 = diam * resol;
-			
-			showProgression(diam2, unitName, i, nSteps);
-			
-			// Create strel
-			Strel strel = shape.fromDiameter(diam);
-			strel.showProgress(false);
-			
-			// compute morphological operation
-			ImageProcessor image2 = op.apply(image, strel);
-			imp.setProcessor(image2);
-			imp.updateImage();
-				
-			// compute imae volume
-			vol = GrayscaleGranulometry.imageVolume(image2);
-			
-			// update table
-			table.incrementCounter();
-			table.addValue("Diameter", diam2);
-			table.addValue("Volume", vol);
+	private void plotVolumeCurve(double[] x, double[] y, String title, String unitName) 
+	{
+		int nr = x.length;
+		double xMax = x[nr-1];
+		double yMax = 0;
+		for (int i = 0; i < nr; i++) 
+		{
+			yMax = Math.max(yMax, y[i]);
 		}
 		
-		imp.setProcessor(image);
-		imp.updateImage();
-		
-		// return the created array
-		return new Object[]{"Granulometry", table};
-	}
+		// create plot with default line
+		Plot plot = new Plot(title, "Strel Diameter (" + unitName + ")",
+				"Image Total Intensity", x, y);
 
-	/**
-	 * Compute granulometric curve on input image, without any display, and
-	 * return directly the data table.
-	 * @deprecated should specify image resolution
-	 */
-	@Deprecated
-	public ResultsTable granulometricCurve(ImageProcessor image, Morphology.Operation op, 
-			Strel.Shape shape, int diamMax, int step) {
-		return granulometricCurve(image, op, shape, diamMax, step, 1, "");
+		// set up plot
+		plot.setLimits(0, xMax, 0, yMax);
+		
+		// Display in new window
+		plot.show();			
 	}
 	
 	/**
 	 * Compute granulometric curve on input image, without any display, using spatial
 	 * calibration of image.
 	 */
-	public ResultsTable granulometricCurve(ImageProcessor image, Morphology.Operation op, 
-			Strel.Shape shape, int diamMax, int step, double resol, String unitName) {
-		
+	public ResultsTable computeVolumeCurve(ImageProcessor image, Morphology.Operation op, 
+			Strel.Shape shape, int diamMax, int step, double resol, String unitName) 
+	{
 		// Ensure input image is Gray 8
-		if (image instanceof ShortProcessor) {
+		if (image instanceof ShortProcessor) 
+		{
 			image = image.convertToByte(true);
 		}
 
@@ -223,11 +205,12 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		table.addValue("Diameter", diam);
 		table.addValue("Volume", vol);
 		
-		for (int i = 0; i < nSteps; i++) {
+		for (int i = 0; i < nSteps; i++) 
+		{
 			diam += step;
 			double diam2 = diam * resol;
 			
-			showProgression(diam2, unitName, i, nSteps);
+			showDiameterProgression(diam2, unitName, i, nSteps);
 			
 			Strel strel = shape.fromDiameter(diam);
 			strel.showProgress(false);
@@ -244,14 +227,14 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn {
 		return table;
 	}
 
-	private void showProgression(double currentDiameter, String unitName,
-			int i, int iMax) {
+	private void showDiameterProgression(double currentDiameter, String unitName, int i, int iMax)
+	{
 		String diamString = String.format(Locale.ENGLISH, "%7.2f",
 				currentDiameter);
-		if (unitName != null && !unitName.isEmpty()) {
+		if (unitName != null && !unitName.isEmpty()) 
+		{
 			diamString = diamString.concat(" " + unitName);
 		}
 		IJ.showStatus("Diameter: " + diamString + " (" + i + "/" + iMax + ")");
-
 	}
 }

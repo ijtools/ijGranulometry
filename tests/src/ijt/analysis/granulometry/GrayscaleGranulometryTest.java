@@ -11,17 +11,19 @@ import java.io.File;
 import org.junit.Test;
 
 
-public class GrayscaleGranulometryTest {
-	
+public class GrayscaleGranulometryTest 
+{	
 	@Test
-	public void testListTiffFiles(){
+	public void testListTiffFiles()
+	{
 		File pattern = new File("./files/vtt2010");
 		File[] files = pattern.listFiles();
 		assertEquals(10, files.length);
 	}
 
 	@Test
-	public void testListTiffGranulometry(){
+	public void testListTiffGranulometry()
+	{
 		File pattern = new File("./files/vtt2010");
 		File[] fileList = pattern.listFiles();
 		

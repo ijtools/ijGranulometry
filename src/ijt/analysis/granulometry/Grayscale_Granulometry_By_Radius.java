@@ -23,6 +23,9 @@ import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
  */
 
 /**
+ * Plugin for computing granulometric curve from a gray level image, by 
+ * specifying the radius range of the structuring element.
+ * 
  * @author David Legland
  *
  */
@@ -31,7 +34,6 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 	/* (non-Javadoc)
 	 * @see ij.plugin.PlugIn#run(java.lang.String)
 	 */
-//	@Override
 	public void run(String arg) 
 	{
 		// Get current open image
@@ -43,7 +45,7 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 		}
 		
 		// create the dialog
-		GenericDialog gd = new GenericDialog("Morphological Filter");
+		GenericDialog gd = new GenericDialog("Grayscale Granulometry");
 		
 		gd.addChoice("Operation", Operation.getAllLabels(), 
 				Operation.CLOSING.toString());
@@ -60,7 +62,9 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 		// Display dialog and wait for user input
 		gd.showDialog();
 		if (gd.wasCanceled())
+		{
 			return;
+		}
 		
 		// extract chosen parameters
 		Operation op = Operation.fromLabel(gd.getNextChoice());
@@ -68,14 +72,15 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 		int radiusMax = (int) gd.getNextNumber();		
 		int step 	= (int) gd.getNextNumber();		
 		double resol = gd.getNextNumber();
+		String unitName = gd.getNextString();
+		boolean displayVolumeCurve = gd.getNextBoolean();
+	
+		// Do some checkup on user inputs
 		if (Double.isNaN(resol)) 
 		{
 			IJ.error("Parsing Error", "Could not interpret the resolution input");
 			return;
 		}
-		String unitName = gd.getNextString();
-		boolean displayVolumeCurve = gd.getNextBoolean();
-	
 		
 		// Execute core of the plugin
 		ResultsTable volumeTable = computeVolumeCurve(image, op.getOperation(), shape, radiusMax, step, 
@@ -83,7 +88,7 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 		if (volumeTable == null)
 			return;
 
-		// Display volumic curve and table if necessary
+		// Display volume curve and table if necessary
 		if (displayVolumeCurve)
 		{
 			// Display table
@@ -107,9 +112,9 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 				image.getShortTitle(), op, shape, radiusMax, step);
 		granulo.show(title);
 		
+		// plot the granulometric curve
 		double[] xi = granulo.getColumnAsDoubles(0);
 		double[] yi = granulo.getColumnAsDoubles(1);
-		
 		plotGranulo(xi, yi, title, unitName);
 	}
 	
@@ -169,17 +174,6 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 		
 		// Display in new window
 		plot.show();			
-	}
-
-	/**
-	 * @deprecated: should specify resolution and unit name
-	 */
-	@Deprecated
-	public Object[] exec(ImagePlus imp, Morphology.Operation op, 
-			Strel.Shape shape, int diamMax, int step) 
-	{
-		ResultsTable table = computeVolumeCurve(imp, op, shape, diamMax, step, 1, "");
-		return new Object[]{"Granulometry", table};
 	}
 	
 	public ResultsTable computeVolumeCurve(ImagePlus imp, Morphology.Operation op, 
