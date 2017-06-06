@@ -288,9 +288,23 @@ public class GrayscaleGranulometry
 
 	
 	/**
-	 * Computes derivative of the second column of the table
+	 * Computes derivative of the second column of the table, with size
+	 * information in the first column.
 	 */
 	public final static ResultsTable derivate(ResultsTable table) 
+	{
+		// calls the generic method with default values.
+		return derivate(table, 0, 1);
+	}
+
+	/**
+	 * Computes derivative of a specific column in the table
+	 * 
+	 * @param table the input data table
+	 * @param indX index of the column containing abscissa (starting from 0)
+	 * @param indY index of the column containing the values to derivate ((starting from 0)
+	 */
+	public final static ResultsTable derivate(ResultsTable table, int indX, int indY) 
 	{
 		// number of table entries
 		int n = table.getCounter();
@@ -300,11 +314,11 @@ public class GrayscaleGranulometry
 		double[] yres = new double[n-1];
 		
 		// Name of the column containing the "size" information
-		String sizeColumnName = table.getColumnHeading(0);
+		String sizeColumnName = table.getColumnHeading(indX);
 		
 		// extract initial and final values
-		double v0 = table.getValueAsDouble(1, 0);
-		double vf = table.getValueAsDouble(1, n-1);
+		double v0 = table.getValueAsDouble(indY, 0);
+		double vf = table.getValueAsDouble(indY, n-1);
 
 		ResultsTable result = new ResultsTable();
 		
@@ -312,13 +326,13 @@ public class GrayscaleGranulometry
 		double v1 = v0;
 		for (int i = 1; i < n-1; i++) 
 		{
-			xres[i] = table.getValueAsDouble(0, i);
-			double v2 = table.getValueAsDouble(1, i);
+			xres[i] = table.getValueAsDouble(indX, i);
+			double v2 = table.getValueAsDouble(indY, i);
 			yres[i] = 100 * (v2 - v1) / (vf - v0);
 			v1 = v2;
 			
 			result.incrementCounter();
-			result.addValue(sizeColumnName, table.getValueAsDouble(0, i));
+			result.addValue(sizeColumnName, table.getValueAsDouble(indX, i));
 			result.addValue("Variation", yres[i]);
 		}
 		

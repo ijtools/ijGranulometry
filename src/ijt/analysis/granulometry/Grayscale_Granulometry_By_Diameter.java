@@ -1,5 +1,7 @@
 package ijt.analysis.granulometry;
 
+import java.util.Locale;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
@@ -8,14 +10,11 @@ import ij.gui.Plot;
 import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
+import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
-import ij.process.ShortProcessor;
-import ijt.analysis.granulometry.GrayscaleGranulometry;
 import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
 import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Strel;
-
-import java.util.Locale;
 
 /**
  * 
@@ -188,7 +187,7 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn
 	{
 		// Ensure input image is Gray 8
 		ImageProcessor image = imp.getProcessor();
-		if (image instanceof ShortProcessor) 
+		if (!(image instanceof ByteProcessor)) 
 		{
 			image = image.convertToByte(true);
 		}
@@ -215,6 +214,8 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn
 			strel.showProgress(false);
 			
 			ImageProcessor image2 = op.apply(image, strel);
+			imp.setProcessor(image2);
+			imp.updateImage();
 			
 			vol = GrayscaleGranulometry.imageVolume(image2);
 			
