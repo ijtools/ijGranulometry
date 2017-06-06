@@ -69,12 +69,12 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn
 		}
 		
 		// extract chosen parameters
-		Operation op = Operation.fromLabel(gd.getNextChoice());
-		Strel.Shape shape = Strel.Shape.fromLabel(gd.getNextChoice());
-		int diamMax = (int) gd.getNextNumber();		
-		int step 	= (int) gd.getNextNumber();		
-		double resol = gd.getNextNumber();
-		String unitName = gd.getNextString();
+		Operation op 		= Operation.fromLabel(gd.getNextChoice());
+		Strel.Shape shape 	= Strel.Shape.fromLabel(gd.getNextChoice());
+		int diamMax 		= (int) gd.getNextNumber();		
+		int step 			= (int) gd.getNextNumber();		
+		double resol 		= gd.getNextNumber();
+		String unitName 	= gd.getNextString();
 		boolean displayVolumeCurve = gd.getNextBoolean();
 
 		// Do some checkup on user inputs
@@ -97,17 +97,15 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn
 			return;
 		}
 		
-		ResultsTable volumeTable = computeVolumeCurve(image.getProcessor(), op.getOperation(), shape, diamMax, step,
+		ResultsTable volumeTable = computeVolumeCurve(image, op.getOperation(), shape, diamMax, step,
 				resol, unitName);
-		//		imp.setProcessor(image);
-		//		imp.updateImage();
 
 		// Display volume curve and table if necessary
 		if (displayVolumeCurve)
 		{
 			// Display table
 			String title = String.format(Locale.ENGLISH,
-					"Volume Curve of %s (operation=%s, shape=%s, diameter=%d, step=%d)",
+					"Volume Curve of %s (operation=%s, shape=%s, diameterMax=%d, step=%d)",
 					image.getShortTitle(), op, shape, diamMax, step);
 			volumeTable.show(title);
 			
@@ -185,10 +183,11 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn
 	 * Compute granulometric curve on input image, without any display, using spatial
 	 * calibration of image.
 	 */
-	public ResultsTable computeVolumeCurve(ImageProcessor image, Morphology.Operation op, 
+	public ResultsTable computeVolumeCurve(ImagePlus imp, Morphology.Operation op, 
 			Strel.Shape shape, int diamMax, int step, double resol, String unitName) 
 	{
 		// Ensure input image is Gray 8
+		ImageProcessor image = imp.getProcessor();
 		if (image instanceof ShortProcessor) 
 		{
 			image = image.convertToByte(true);
@@ -224,6 +223,11 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn
 			table.addValue("Volume", vol);
 		}
 		
+		// restore correct display 
+		imp.setProcessor(image);
+		imp.updateImage();
+		
+		// return the created array
 		return table;
 	}
 
