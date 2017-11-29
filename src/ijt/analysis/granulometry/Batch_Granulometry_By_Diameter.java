@@ -3,6 +3,7 @@ package ijt.analysis.granulometry;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
@@ -95,22 +96,25 @@ public class Batch_Granulometry_By_Diameter implements PlugIn
 		if (image0 == null) 
 			return;
 		
-		// Compute the list of images in input directory
+		// Extract relevant file information
 		FileInfo infos = image0.getOriginalFileInfo();
 		File baseDir = new File(infos.directory);
-		File[] fileList = baseDir.listFiles();
-//		File[] fileList = baseDir.listFiles(new FilenameFilter()
-//		{
-//			/**
-//			 * Accept all files except hidden files
-//			 */
-//			@Override
-//			public boolean accept(File dir, String name)
-//			{
-//				return !name.startsWith(".");
-//			}
-//			
-//		});
+		
+		// determine image file extension
+		int dotIndex = infos.fileName.lastIndexOf(".");
+		if (dotIndex <= 0)
+			return;
+	    final String ext = infos.fileName.substring(dotIndex);
+	    
+		// find all files with matching extension
+		File[] fileList = baseDir.listFiles(new FilenameFilter()
+		{
+			@Override
+			public boolean accept(File dir, String name)
+			{
+				return name.endsWith(ext); 
+			}
+		});
 		
 		// (2) Open a dialog to choose analysis parameters
 		GenericDialog gd = new GenericDialog("Batch Grayscale Granulometry");
@@ -159,7 +163,10 @@ public class Batch_Granulometry_By_Diameter implements PlugIn
 		
 		// (4) Compute the granulometric curves
 		Object[] results = exec(fileList, op, shape, diamMax, step, enhancement, resol, unitName);
-		
+		if (results == null)
+		{
+			return;
+		}
 		
 		// (5) process results
 		ResultsTable volumeTable = (ResultsTable) results[1];
@@ -242,6 +249,7 @@ public class Batch_Granulometry_By_Diameter implements PlugIn
 		// Initialize array of image volumes
 		double[] volumes = new double[nSteps + 1];
 		
+		// Read the first image of the list to visually track algo changes
 		ImagePlus demoImage = IJ.openImage(fileList[0].getAbsolutePath());
 		if (demoImage == null)
 		{
