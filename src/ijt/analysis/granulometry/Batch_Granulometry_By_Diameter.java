@@ -1,20 +1,5 @@
 package ijt.analysis.granulometry;
 
-import ij.IJ;
-import ij.ImagePlus;
-import ij.gui.GenericDialog;
-import ij.gui.Plot;
-import ij.io.FileInfo;
-import ij.io.OpenDialog;
-import ij.measure.ResultsTable;
-import ij.plugin.ContrastEnhancer;
-import ij.plugin.PlugIn;
-import ij.process.ImageProcessor;
-import ij.process.ShortProcessor;
-import ijt.analysis.granulometry.GrayscaleGranulometry;
-import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
-import inra.ijpb.morphology.Strel;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -22,6 +7,20 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Locale;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.GenericDialog;
+import ij.gui.Plot;
+import ij.io.FileInfo;
+import ij.io.SaveDialog;
+import ij.measure.ResultsTable;
+import ij.plugin.ContrastEnhancer;
+import ij.plugin.PlugIn;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
+import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
+import inra.ijpb.morphology.Strel;
 
 
 /**
@@ -32,24 +31,29 @@ import java.util.Locale;
  * @author David Legland
  *
  */
-public class Batch_Granulometry_By_Diameter implements PlugIn {
+public class Batch_Granulometry_By_Diameter implements PlugIn
+{
 
-	public enum Enhancement {
+	public enum Enhancement
+	{
 		NONE("None"),
 		NORMALIZE("Normalize"),
 		EQUALIZE("Equalize");
 		
 		private String label;
 		
-		private Enhancement(String label) {
+		private Enhancement(String label)
+		{
 			this.label = label;
 		}
-		
-		public String toString() {
+
+		public String toString()
+		{
 			return this.label;
 		}
-		
-		public static String[] getAllLabels(){
+
+		public static String[] getAllLabels()
+		{
 			int n = Enhancement.values().length;
 			String[] result = new String[n];
 			
@@ -62,12 +66,16 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		
 		/**
 		 * Determines the operation type from its label.
-		 * @throws IllegalArgumentException if label is not recognized.
+		 * 
+		 * @throws IllegalArgumentException
+		 *             if label is not recognized.
 		 */
-		public static Enhancement fromLabel(String label) {
+		public static Enhancement fromLabel(String label)
+		{
 			if (label != null)
 				label = label.toLowerCase();
-			for (Enhancement val : Enhancement.values()) {
+			for (Enhancement val : Enhancement.values())
+			{
 				String cmp = val.toString().toLowerCase();
 				if (cmp.equals(label))
 					return val;
@@ -80,8 +88,8 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 	 * @see ij.plugin.PlugIn#run(java.lang.String)
 	 */
 //	@Override
-	public void run(String arg) {
-
+	public void run(String arg)
+	{
 		// (1) Choose an image into the input directory
 		ImagePlus image0 = IJ.openImage();
 		if (image0 == null) 
@@ -91,6 +99,18 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		FileInfo infos = image0.getOriginalFileInfo();
 		File baseDir = new File(infos.directory);
 		File[] fileList = baseDir.listFiles();
+//		File[] fileList = baseDir.listFiles(new FilenameFilter()
+//		{
+//			/**
+//			 * Accept all files except hidden files
+//			 */
+//			@Override
+//			public boolean accept(File dir, String name)
+//			{
+//				return !name.startsWith(".");
+//			}
+//			
+//		});
 		
 		// (2) Open a dialog to choose analysis parameters
 		GenericDialog gd = new GenericDialog("Batch Grayscale Granulometry");
@@ -128,10 +148,12 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		// (3) Open a dialog to choose the result file name
 		String defaultName = createDefaultFileName(baseDir.getPath(), op,
 				shape, diamMax, step, enhancement);
-		OpenDialog dlg = new OpenDialog("Save Result file", baseDir.getParent(), defaultName);
+		SaveDialog dlg = new SaveDialog("Save Result file", baseDir.getParent(), defaultName);
 		String outputDirName = dlg.getDirectory();
 		String fileName = dlg.getFileName();
-		if (fileName == null) {
+		if (fileName == null) 
+		{
+			IJ.log("Could not read output file: " + fileName);
 			return;
 		}
 		
@@ -169,11 +191,14 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		saveResultsTable(fileName, statsTable);
 	}
 
-	private final static String createDefaultFileName(String baseDir, Operation op, 
-			Strel.Shape shape, int diamMax, int step, Enhancement enhanceType) {
+	private final static String createDefaultFileName(String baseDir,
+			Operation op, Strel.Shape shape, int diamMax, int step,
+			Enhancement enhanceType)
+	{
 		String baseName = new File(baseDir).getName() + "_";
 		
-		switch (enhanceType) {
+		switch (enhanceType)
+		{
 		case NORMALIZE:
 			baseName = baseName + "norm_";
 			break;
@@ -188,7 +213,8 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		String opName = op.toString().substring(0, 2);
 
 		String shapeName = "Unk";
-		switch(shape) {
+		switch(shape)
+		{
 		case DISK: 			shapeName = "Dsk"; break;
 		case SQUARE: 		shapeName = "Sq"; break;
 		case OCTAGON: 		shapeName = "Oct"; break;
@@ -207,8 +233,8 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 	
 	public Object[] exec(File[] fileList, Operation op, Strel.Shape shape,
 			int diamMax, int step, Enhancement enhanceType, double resol,
-			String unitName) {
-		
+			String unitName)
+	{
 		// Number of times the morphological operation should be applied
 		// Diameter = 1 corresponds to original image
 		int nSteps = (diamMax - 1) / step;
@@ -217,6 +243,11 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		double[] volumes = new double[nSteps + 1];
 		
 		ImagePlus demoImage = IJ.openImage(fileList[0].getAbsolutePath());
+		if (demoImage == null)
+		{
+			IJ.error("Could not open input file:\n" + fileList[0].getAbsolutePath());
+			return null;
+		}
 		demoImage.show();
 		
 		// Initialize two tables: one for volumes, one for granulos
@@ -230,9 +261,9 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		ContrastEnhancer enhancer = new ContrastEnhancer();
 		
 		// Iterate on image list
-		for (int iImg = 0; iImg < fileList.length; iImg++) {
-
-			// Read and extract current image processor 
+		for (int iImg = 0; iImg < fileList.length; iImg++)
+		{
+			// Read and extract current image processor
 			ImagePlus imp = IJ.openImage(fileList[iImg].getAbsolutePath());
 			if (imp == null)
 				break;
@@ -240,12 +271,14 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 			ImageProcessor image = imp.getProcessor();
 			
 			// Ensure input image is Gray 8
-			if (image instanceof ShortProcessor) {
+			if (image instanceof ShortProcessor) 
+			{
 				image = image.convertToByte(true);
 			}
 			
 			// Eventually add normalisation process
-			switch (enhanceType) {
+			switch (enhanceType) 
+			{
 			case NORMALIZE:
 				enhancer.stretchHistogram(image, .05);
 				break;
@@ -274,7 +307,8 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 
 			// Iterate on the different strel diameters
 			int diam = 1;
-			for (int i = 0; i < nSteps; i++) {
+			for (int i = 0; i < nSteps; i++) 
+			{
 				// Compute and display current size 
 				diam += step;
 				IJ.showStatus("Diameter " + diam + "(" + (i+1) + "/" + nSteps + ")");
@@ -302,7 +336,8 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 			// stores the granulometric curve
 			granuloTable.incrementCounter();
 			granuloTable.addLabel(fileList[iImg].getName());
-			for (int i = 0; i < nSteps; i++) {
+			for (int i = 0; i < nSteps; i++) 
+			{
 				granuloTable.addValue(varNames[i+1], granulo[i]);
 			}
 		}
@@ -347,40 +382,45 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		return varNames;
 	}
 	
-	
-	private void plotVolumetryCurves(ResultsTable volumeTable, String title, String unitName) {
-		
+	private void plotVolumetryCurves(ResultsTable volumeTable, String title,
+			String unitName)
+	{
 		// Size of the table
 		int nCols = volumeTable.getLastColumn() + 1;
 		int nRows = volumeTable.getCounter();
 
 		// Get var names and deduces strel sizes
 		double[] x = new double[nCols];
-		for (int i = 0; i < nCols; i++) {
+		for (int i = 0; i < nCols; i++)
+		{
 			x[i] = Double.valueOf(volumeTable.getColumnHeading(i));
 		}
-		double xMax = x[nCols-1];
-		
+		double xMax = x[nCols - 1];
+
 		// Determines the max value for y
 		double yMax = 0;
-		for (int i = 0; i < nRows; i++) {
-			for (int j = 0; j < nCols; j++) {
+		for (int i = 0; i < nRows; i++)
+		{
+			for (int j = 0; j < nCols; j++)
+			{
 				yMax = Math.max(yMax, volumeTable.getValueAsDouble(j, i));
 			}
 		}
-		
+	
 		// create new empty plot
 		Plot plot = new Plot(title, "Strel Diameter (" + unitName + ")",
 				"Sum of gray levels", x, new double[nCols]);
 
 		// set up plot
 		plot.setLimits(0, xMax, 0, yMax);
-		
+
 		// Add each data row
 		double[] row = new double[nCols];
-		for (int r = 0; r < nRows; r++) {
+		for (int r = 0; r < nRows; r++)
+		{
 			// Extract current row
-			for (int c = 0; c < nCols; c++) {
+			for (int c = 0; c < nCols; c++)
+			{
 				row[c] = volumeTable.getValueAsDouble(c, r);
 			}
 			
@@ -391,23 +431,27 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		plot.show();
 	}
 
-	private void plotGranulometryCurves(ResultsTable granuloTable, String title, String unitName) {
-		
+	private void plotGranulometryCurves(ResultsTable granuloTable, String title,
+			String unitName)
+	{
 		// Size of the table
 		int nCols = granuloTable.getLastColumn() + 1;
 		int nRows = granuloTable.getCounter();
 
 		// Get var names and deduces strel sizes
 		double[] x = new double[nCols];
-		for (int i = 0; i < nCols; i++) {
+		for (int i = 0; i < nCols; i++)
+		{
 			x[i] = Double.valueOf(granuloTable.getColumnHeading(i));
 		}
 		double xMax = x[nCols-1];
 		
 		// Determines the max value for y
 		double yMax = 0;
-		for (int i = 0; i < nRows; i++) {
-			for (int j = 0; j < nCols; j++) {
+		for (int i = 0; i < nRows; i++)
+		{
+			for (int j = 0; j < nCols; j++)
+			{
 				yMax = Math.max(yMax, granuloTable.getValueAsDouble(j, i));
 			}
 		}
@@ -421,9 +465,11 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		
 		// Add each data row
 		double[] row = new double[nCols];
-		for (int r = 0; r < nRows; r++) {
+		for (int r = 0; r < nRows; r++)
+		{
 			// Extract current row
-			for (int c = 0; c < nCols; c++) {
+			for (int c = 0; c < nCols; c++)
+			{
 				row[c] = granuloTable.getValueAsDouble(c, r);
 			}
 			
@@ -435,14 +481,16 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 	}
 	
 	
-	private void saveSummaryFile(String fileName, File[] fileList, Operation op, 
-			Strel.Shape shape, int diamMax, int step, Enhancement enhanceType, double resol,
-			String unitName) {
-		
+	private void saveSummaryFile(String fileName, File[] fileList, Operation op,
+			Strel.Shape shape, int diamMax, int step, Enhancement enhanceType,
+			double resol, String unitName)
+	{
 		PrintWriter writer;
-		try {
+		try
+		{
 			writer = new PrintWriter(new BufferedWriter(new FileWriter(fileName)));
-		} catch(IOException ex) {
+		} catch (IOException ex)
+		{
 			throw new RuntimeException("Could not open file: " + fileName, ex);
 		}
 
@@ -461,7 +509,8 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		writer.println();
 		
 		writer.println("List of image files:");
-		for (int i = 0; i < fileList.length; i++) {
+		for (int i = 0; i < fileList.length; i++)
+		{
 			writer.println(fileList[i].getName());	
 		}
 
@@ -471,11 +520,15 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		writer.close();
 	}
 
-	private void saveResultsTable(String fileName, ResultsTable table) {
+	private void saveResultsTable(String fileName, ResultsTable table)
+	{
 		PrintWriter writer;
-		try {
-			writer = new PrintWriter(new BufferedWriter(new FileWriter(fileName)));
-		} catch(IOException ex) {
+		try
+		{
+			writer = new PrintWriter(
+					new BufferedWriter(new FileWriter(fileName)));
+		} catch (IOException ex)
+		{
 			throw new RuntimeException("Could not open file: " + fileName, ex);
 		}
 
@@ -483,18 +536,21 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		int nCols = table.getLastColumn() + 1;
 		int nRows = table.getCounter();
 		
-		// Write header name of each column 
+		// Write header name of each column
 		writer.print("name");
-		for (int i = 0; i < nCols; i++) {
+		for (int i = 0; i < nCols; i++)
+		{
 			writer.print("\t" + table.getColumnHeading(i));
 		}
 		writer.println();
-		
+
 		// Write header name of each column
-		for (int r = 0; r < nRows; r++) {
-			
+		for (int r = 0; r < nRows; r++)
+		{
+
 			writer.print(table.getLabel(r));
-			for (int c = 0; c < nCols; c++) {
+			for (int c = 0; c < nCols; c++)
+			{
 				double val = table.getValueAsDouble(c, r);
 				String str = String.format(Locale.US, "%7.4f", val);
 				writer.print("\t" + str);
@@ -506,5 +562,4 @@ public class Batch_Granulometry_By_Diameter implements PlugIn {
 		// Closes the file 
 		writer.close();
 	}
-
 }
