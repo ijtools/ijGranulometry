@@ -5,6 +5,7 @@ package ijt.analysis.granulometry;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 
@@ -282,6 +283,44 @@ public class GrayscaleGranulometry
 			
 			// add to global result
 			res += resy;
+		}
+		return res;
+	}
+
+	/**
+	 * Computes the gray scale volume of the input 3D image, by computing the sum
+	 * of intensity value for each voxel.
+	 * 
+	 * @param image
+	 *            a gray scale 3D image
+	 * @return the sum of pixel intensities
+	 */
+	public final static double imageVolume(ImageStack image) 
+	{
+		// image size
+		int width = image.getWidth();
+		int height = image.getHeight();
+		int sizeZ = image.getSize();
+
+		double resy = 0;
+		double res = 0;
+		
+		// iterate on slices
+		for (int z = 0; z < sizeZ; z++) 
+		{
+			// iterate on rows
+			for (int y = 0; y < height; y++) 
+			{
+				// Compute sum of grays on current row
+				resy = 0;
+				for (int x = 0; x < width; x++) 
+				{
+					resy += image.getVoxel(x, y, z);
+				}
+
+				// add to global result
+				res += resy;
+			}
 		}
 		return res;
 	}
