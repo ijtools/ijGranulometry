@@ -21,7 +21,7 @@ After installation, a new "Granulometry" menu appears within the plugins menu. I
 Several structuring element shapes may be chosen: square, disk, diamond, octagon, 
 or line segments with various orientations.
 
-Several operation may be applied: erosion, dilation, closing or opening.
+Several operations may be applied: erosion, dilation, closing or opening.
 
 The difference between the radius-based and the diameter-based granulometries rely on the 
 way the structuring element is computed. Structuring elements defined from a diameter can

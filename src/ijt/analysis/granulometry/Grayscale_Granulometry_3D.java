@@ -16,11 +16,6 @@ import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Strel3D;
 import inra.ijpb.util.IJUtils;
 
-
-/**
- * 
- */
-
 /**
  * Plugin for computing granulometric curve from a gray level 3D image, by 
  * specifying the radius range of the structuring element.
@@ -127,14 +122,18 @@ public class Grayscale_Granulometry_3D implements PlugIn
 		IJUtils.showElapsedTime("3D granulometry", timeInMilliSecs, image);
 	}
 	
-	/**
-	 * Displays the granulometric curve and adds some decorations.
-	 *  
-	 * @param x the array of values for sizes
-	 * @param y the array of values for size distribution
-	 * @param title the title of the graph
-	 * @param unitName unit name (for legend)
-	 */
+    /**
+     * Displays the granulometric curve and adds some decorations.
+     * 
+     * @param x
+     *            the array of values for sizes
+     * @param y
+     *            the array of values for size distribution
+     * @param title
+     *            the title of the graph
+     * @param unitName
+     *            unit name (for legend)
+     */
 	private void plotGranulo(double[] x, double[] y, String title, String unitName) 
 	{
 		int nr = x.length;
@@ -156,14 +155,18 @@ public class Grayscale_Granulometry_3D implements PlugIn
 		plot.show();			
 	}
 
-	/**
-	 * Displays the image volume curve and adds some decorations.
-	 *  
-	 * @param x the array of values for sizes
-	 * @param y the array of values for size distribution
-	 * @param title the title of the graph
-	 * @param unitName unit name (for legend)
-	 */
+    /**
+     * Displays the image volume curve and adds some decorations.
+     * 
+     * @param x
+     *            the array of values for sizes
+     * @param y
+     *            the array of values for size distribution
+     * @param title
+     *            the title of the graph
+     * @param unitName
+     *            unit name (for legend)
+     */
 	private void plotVolumeCurve(double[] x, double[] y, String title, String unitName) 
 	{
 		int nr = x.length;
@@ -242,57 +245,6 @@ public class Grayscale_Granulometry_3D implements PlugIn
 		// return the created array
 		return table;
 	}
-
-//	public ResultsTable granulometricCurve(ImageProcessor image, Morphology.Operation op, 
-//			Strel.Shape shape, int radiusMax, int step)
-//	{
-//		return granulometricCurve(image, op, shape, radiusMax, step, 1, "");
-//	}
-//	
-//	public ResultsTable granulometricCurve(ImageProcessor image, Morphology.Operation op, 
-//			Strel.Shape shape, int radiusMax, int step, double resol, String unitName) 
-//	{
-//		// Ensure input image is Gray 8
-//		if (!(image instanceof ByteProcessor)) 
-//		{
-//			image = image.convertToByte(true);
-//		}
-//
-//		int nSteps = radiusMax / step;
-//		
-//		double vol = GrayscaleGranulometry.imageVolume(image);
-//
-//		ResultsTable table = new ResultsTable();
-//		
-//		int radius = 1;
-//		table.incrementCounter();
-//		table.addValue("Radius", radius);
-//		table.addValue("Diameter", radius * 2 + 1);
-//		table.addValue("Volume", vol);
-//		
-//		for (int i = 0; i < nSteps; i++) 
-//		{
-//			radius += step;
-//			double radius2 = radius * resol;
-//			double diam2 = (2 * radius + 1) * resol;
-//			
-//			showRadiusProgression(radius2, unitName, i, nSteps);
-//			
-//			Strel strel = shape.fromRadius(radius);
-//			strel.showProgress(false);
-//			
-//			ImageProcessor image2 = op.apply(image, strel);
-//			
-//			vol = GrayscaleGranulometry.imageVolume(image2);
-//			
-//			table.incrementCounter();
-//			table.addValue("Radius", radius2);
-//			table.addValue("Diameter", diam2);
-//			table.addValue("Volume", vol);
-//		}
-//		
-//		return table;
-//	}
 
 	private void showRadiusProgression(double currentRadius, String unitName, int i, int iMax) 
 	{

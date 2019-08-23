@@ -30,7 +30,7 @@ public class GrayscaleGranulometry
 	 * This enumeration is mainly a wrapper to a subset of operations defined in
 	 * Morphology.Operation.
 	 * 
-	 * @see ijt.filter.morphology.Morphology.Operation
+	 * @see inra.ijpb.morphology.Morphology.Operation
 	 */
 	public enum Operation 
 	{
