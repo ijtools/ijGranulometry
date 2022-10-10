@@ -11,6 +11,7 @@ import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
 import inra.ijpb.morphology.Morphology;
@@ -45,9 +46,15 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn
 			return;
 		}
 		
+		boolean colorImage = image.getProcessor() instanceof ColorProcessor;
+		
 		// create the dialog
 		GenericDialog gd = new GenericDialog("Grayscale Granulometry");
 		
+		if (colorImage)
+		{
+			gd.addChoice("Working Channel", new String[] {"Red", "Green", "Blue"}, "Red");
+		}
 		gd.addChoice("Operation", Operation.getAllLabels(), 
 				Operation.CLOSING.toString());
 		gd.addChoice("Shape of Element", Strel.Shape.getAllLabels(), 
@@ -68,6 +75,7 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn
 		}
 		
 		// extract chosen parameters
+		int channelIndex    = colorImage ? gd.getNextChoiceIndex() : 0;
 		Operation op 		= Operation.fromLabel(gd.getNextChoice());
 		Strel.Shape shape 	= Strel.Shape.fromLabel(gd.getNextChoice());
 		int diamMax 		= (int) gd.getNextNumber();		
@@ -96,8 +104,11 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn
 			return;
 		}
 		
-		ResultsTable volumeTable = computeVolumeCurve(image, op.getOperation(), shape, diamMax, step,
-				resol, unitName);
+		
+		// dispatch processing according to color / grayscale
+		ResultsTable volumeTable = colorImage
+				? computeVolumeCurveChannel(image, channelIndex, op.getOperation(), shape, diamMax, step, resol, unitName)
+				: computeVolumeCurve(image, op.getOperation(), shape, diamMax, step, resol, unitName);
 
 		// Display volume curve and table if necessary
 		if (displayVolumeCurve)
@@ -227,6 +238,63 @@ public class Grayscale_Granulometry_By_Diameter implements PlugIn
 		// restore correct display 
 		imp.setProcessor(image);
 		imp.updateImage();
+		
+		// return the created array
+		return table;
+	}
+
+	/**
+	 * Compute granulometric curve on input image, without any display, using spatial
+	 * calibration of image.
+	 */
+	private ResultsTable computeVolumeCurveChannel(ImagePlus colorImage, int channelIndex, Morphology.Operation op,
+			Strel.Shape shape, int diamMax, int step, double resol, String unitName) 
+	{
+		// Ensure input image is Gray 8
+		ImageProcessor baseImage = colorImage.getProcessor();
+		ImageProcessor image = baseImage;
+		if (image instanceof ColorProcessor) 
+		{
+			image = ((ColorProcessor) image).getChannel(channelIndex + 1, new ByteProcessor(image.getWidth(), image.getHeight()));
+		}
+
+		int nSteps = diamMax / step;
+		
+		double vol = GrayscaleGranulometry.imageVolume(image);
+		IJ.log("volume = " + vol);
+
+		ResultsTable table = new ResultsTable();
+		
+		int diam = 1;
+		table.incrementCounter();
+		table.addValue("Diameter", diam);
+		table.addValue("Volume", vol);
+		
+		for (int i = 0; i < nSteps; i++) 
+		{
+			diam += step;
+			double diam2 = diam * resol;
+			
+			showDiameterProgression(diam2, unitName, i, nSteps);
+			
+			Strel strel = shape.fromDiameter(diam);
+			strel.showProgress(false);
+			
+			ImageProcessor image2 = op.apply(image, strel);
+			
+			colorImage.setProcessor(image2);
+			colorImage.updateImage();
+			
+			vol = GrayscaleGranulometry.imageVolume(image2);
+			
+			table.incrementCounter();
+			table.addValue("Diameter", diam2);
+			table.addValue("Volume", vol);
+		}
+		
+		// restore correct display 
+		colorImage.setProcessor(baseImage);
+		colorImage.updateImage();
 		
 		// return the created array
 		return table;

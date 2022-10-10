@@ -11,6 +11,7 @@ import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 import ijt.analysis.granulometry.GrayscaleGranulometry.Operation;
@@ -44,9 +45,15 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 			return;
 		}
 		
+		boolean colorImage = image.getProcessor() instanceof ColorProcessor;
+		
 		// create the dialog
 		GenericDialog gd = new GenericDialog("Grayscale Granulometry");
 		
+		if (colorImage)
+		{
+			gd.addChoice("Working Channel", new String[] {"Red", "Green", "Blue"}, "Red");
+		}
 		gd.addChoice("Operation", Operation.getAllLabels(), 
 				Operation.CLOSING.toString());
 		gd.addChoice("Element", Strel.Shape.getAllLabels(), 
@@ -67,6 +74,7 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 		}
 		
 		// extract chosen parameters
+		int channelIndex    = colorImage ? gd.getNextChoiceIndex() : 0;
 		Operation op 		= Operation.fromLabel(gd.getNextChoice());
 		Strel.Shape shape 	= Strel.Shape.fromLabel(gd.getNextChoice());
 		int radiusMax 		= (int) gd.getNextNumber();		
@@ -82,9 +90,14 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 			return;
 		}
 		
-		// Execute core of the plugin
-		ResultsTable volumeTable = computeVolumeCurve(image, op.getOperation(), shape, radiusMax, step, 
-				resol, unitName);
+		// dispatch processing according to color / grayscale
+		ResultsTable volumeTable = colorImage
+				? computeVolumeCurveChannel(image, channelIndex, op.getOperation(), shape, radiusMax, step, resol, unitName)
+				: computeVolumeCurve(image, op.getOperation(), shape, radiusMax, step, resol, unitName);
+
+//		// Execute core of the plugin
+//		ResultsTable volumeTable = computeVolumeCurve(image, op.getOperation(), shape, radiusMax, step, 
+//				resol, unitName);
 		if (volumeTable == null)
 			return;
 
@@ -233,6 +246,64 @@ public class Grayscale_Granulometry_By_Radius implements PlugIn
 		return table;
 	}
 
+	private ResultsTable computeVolumeCurveChannel(ImagePlus colorImage, int channelIndex, Morphology.Operation op, 
+			Strel.Shape shape, int diamMax, int step, double resol, String unitName) 
+	{
+		// Ensure input image is Gray 8
+		ImageProcessor baseImage = colorImage.getProcessor();
+		ImageProcessor image = baseImage;
+		if (image instanceof ColorProcessor) 
+		{
+			image = ((ColorProcessor) image).getChannel(channelIndex + 1, new ByteProcessor(image.getWidth(), image.getHeight()));
+		}
+
+		int nSteps = diamMax / step;
+		
+		double[] volumes = new double[nSteps + 1];
+		
+		double vol = GrayscaleGranulometry.imageVolume(image);
+		volumes[0] = vol;
+		
+		ResultsTable table = new ResultsTable();
+		table.incrementCounter();
+		table.addValue("Radius", 0);
+		table.addValue("Diameter", 0);
+		table.addValue("Volume", vol);
+		
+		int radius = 0;
+		for (int i = 0; i < nSteps; i++) 
+		{
+			radius += step;
+			
+			double radius2 = radius * resol;
+			double diam2 = (2 * radius + 1) * resol;
+			
+			showRadiusProgression(radius2, unitName, i, nSteps);
+			
+			Strel strel = shape.fromRadius(radius);
+			strel.showProgress(false);
+			
+			ImageProcessor image2 = op.apply(image, strel);
+			colorImage.setProcessor(image2);
+			colorImage.updateImage();
+				
+			vol = GrayscaleGranulometry.imageVolume(image2);
+			volumes[i+1] = vol;
+			
+			table.incrementCounter();
+			table.addValue("Radius", radius2);
+			table.addValue("Diameter", diam2);
+			table.addValue("Volume", vol);
+		}
+		
+		// restore correct display 
+		colorImage.setProcessor(baseImage);
+		colorImage.updateImage();
+		
+		// return the created array
+		return table;
+	}
+	
 	public ResultsTable granulometricCurve(ImageProcessor image, Morphology.Operation op, 
 			Strel.Shape shape, int radiusMax, int step)
 	{
