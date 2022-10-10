@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>org.scijava</groupId>
+        <artifactId>pom-scijava</artifactId>
+        <version>1.126</version>
+        <relativePath />
+    </parent>
+	
+    <!-- The identification of the plugin --> 
+    <!-- Feel free to update to what you want, but remember that --> 
+    <!-- ImageJ plugins require an underscore '_' in the name... --> 
+    <groupId>net.ijtools</groupId>
+    <artifactId>Grayscale_Granulometry</artifactId>
+    <version>1.2.1-SNAPSHOT</version>
+
+	<name>plugins/Grayscale_Granulometry.jar</name>
+    <description>Grayscale granulometry plugin for ImageJ</description>
+	
+    <dependencies>
+        <!-- When writing ImageJ/Fiji plugins, it is necessary to add a dependency 
+             to ImageJ jar -->
+        <dependency>
+            <groupId>net.imagej</groupId>
+            <artifactId>ij</artifactId>
+            <version>${imagej1.version}</version>
+        </dependency>
+
+		<!-- Add a dependency to MorphoLibJ, that manages the morphological operators --> 
+        <dependency>
+			<groupId>fr.inra.ijpb</groupId>
+			<artifactId>MorphoLibJ_</artifactId>
+			<version>1.5.0</version>
+		</dependency>
+		 
+        <!-- Add a dependency to JUnit for unit tests --> 
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.1</version>
+            <scope>test</scope>
+        </dependency>
+        
+    </dependencies>
+
+  <build>
+	    <resources>
+			<resource>
+				<directory>${basedir}/src/main/resources</directory>
+			</resource>
+			<resource>
+				<directory>${project.build.sourceDirectory}</directory>
+			</resource>
+		</resources>
+		
+		<testResources>
+			<testResource>
+				<directory>${basedir}/src/test/resources</directory>
+			</testResource>
+			<testResource>
+				<directory>${project.build.testSourceDirectory}</directory>
+			</testResource>
+		</testResources>
+	
+		<plugins>
+           <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- Configure the jar output directory -->
+               <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-jar-plugin</artifactId>
+                  <configuration>
+                      <!-- Place the jar in "plugins" directory of current workspace -->
+                    <outputDirectory>${basedir}/target</outputDirectory>
+                    
+                    <!-- Place the jar in "plugins" directory of local ImageJ installation 
+                        (need to be adapted depending on local configuration...) -->
+                    <!-- <outputDirectory>C:/Program Files (x86)/ImageJ/plugins</outputDirectory> -->
+                  </configuration>
+            </plugin>
+            
+            <!-- plugin for generating the javadoc.
+                 Output is located in "target/site/apidocs" -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
+                    <encoding>ISO-8859-1</encoding>
+                  </configuration>
+                  <executions>
+                      <execution>
+                        <goals>
+                              <goal>javadoc</goal>
+                        </goals>
+                        <phase>site</phase>
+                      </execution>
+                </executions>
+              </plugin>
+		</plugins>
+	
+	</build>
+	
+   <developers>
+        <developer>
+            <id>dlegland</id>
+            <name>David Legland</name>
+            <email>david.legland@inrae.fr</email>
+            <organization>INRAE</organization>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+        </developer>
+    </developers>
+	
+   <repositories>
+        <!-- NB: for project parent -->
+        <repository>
+            <id>imagej.public</id>
+            <url>http://maven.imagej.net/content/groups/public</url>
+        </repository>
+    </repositories>
+	
+</project>
